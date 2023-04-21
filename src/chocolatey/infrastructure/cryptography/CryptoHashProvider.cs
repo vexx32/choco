@@ -39,6 +39,21 @@ namespace chocolatey.infrastructure.cryptography
             _hashAlgorithm = GetHashAlgorithmStatic(algorithmType);
         }
 
+        internal IHashAlgorithm GetHashAlgorithm()
+        {
+            return _hashAlgorithm;
+        }
+
+        internal void SetHashAlgorithm(IHashAlgorithm algorithm)
+        {
+            _hashAlgorithm = algorithm;
+        }
+
+        public ScopedProviderHashType WithProviderType(CryptoHashProviderType algorithmType)
+        {
+            return new ScopedProviderHashType(algorithmType, this);
+        }
+
         private static IHashAlgorithm GetHashAlgorithmStatic(CryptoHashProviderType algorithmType)
         {
 
