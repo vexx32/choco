@@ -58,24 +58,51 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands\AddChocolateyPinnedTaskbarItemCommand.cs" />
+    <Compile Include="Commands\ExpandChocolateyArchiveCommand.cs" />
+    <Compile Include="Commands\GetChocolateyConfigValueCommand.cs" />
     <Compile Include="Commands\GetChocolateyPathCommand.cs" />
     <Compile Include="Commands\AssertValidChecksumCommand.cs" />
     <Compile Include="Shared\ChecksumExeNotFoundException.cs" />
     <Compile Include="Shared\ChecksumVerificationFailedException.cs" />
     <Compile Include="Shared\ChecksumMissingException.cs" />
     <Compile Include="Commands\GetEnvironmentVariableCommand.cs" />
+    <Compile Include="Commands\GetEnvironmentVariableNameCommand.cs" />
     <Compile Include="Commands\GetEnvironmentVariableNamesCommand.cs" />
+    <Compile Include="Commands\GetOsArchitectureWidthCommand.cs" />
+    <Compile Include="Commands\GetPackageParameterCommand.cs" />
+    <Compile Include="Commands\GetToolsLocationCommand.cs" />
+    <Compile Include="Commands\GetUacEnabledCommand.cs" />
+    <Compile Include="Commands\GetUninstallRegistryKeyCommand.cs" />
+    <Compile Include="Commands\GetVirusCheckValidCommand.cs" />
+    <Compile Include="Commands\InstallChocolateyEnvironmentVariableCommand.cs" />
+    <Compile Include="Commands\InstallChocolateyExplorerMenuItemCommand.cs" />
+    <Compile Include="Commands\InstallChocolateyFileAssociationCommand.cs" />
+    <Compile Include="Commands\InstallChocolateyInstallPackageCommand.cs" />
+    <Compile Include="Commands\InstallChocolateyPackageCommand.cs" />
     <Compile Include="Commands\InstallChocolateyPathCommand.cs" />
+    <Compile Include="Commands\InstallChocolateyPowerShellCommandCommand.cs" />
+    <Compile Include="Commands\NewShimCommand.cs" />
     <Compile Include="Commands\SetEnvironmentVariableCommand.cs" />
+    <Compile Include="Commands\StartChocolateyProcessCommand.cs" />
     <Compile Include="Commands\TestProcessAdminRightsCommand.cs" />
+    <Compile Include="Commands\TestProcessRunningAsAdminCommand.cs" />
     <Compile Include="Commands\UninstallChocolateyPathCommand.cs" />
     <Compile Include="Commands\UpdateSessionEnvironmentCommand.cs" />
+    <Compile Include="Extensions\DoubleExtensions.cs" />
+    <Compile Include="Extensions\StringExtensions.cs" />
+    <Compile Include="Helpers\ArchitectureWidth.cs" />
+    <Compile Include="Helpers\CancellableSleepHelper.cs" />
     <Compile Include="Helpers\ChecksumValidator.cs" />
     <Compile Include="Helpers\Elevation.cs" />
     <Compile Include="Helpers\EnvironmentHelper.cs" />
     <Compile Include="Helpers\Paths.cs" />
     <Compile Include="Helpers\ProcessInformation.cs" />
     <Compile Include="Helpers\PSHelper.cs" />
+    <Compile Include="Helpers\SevenZipHelper.cs" />
+    <Compile Include="Helpers\StartChocolateyProcessHelper.cs" />
+    <Compile Include="Helpers\WebHelper.cs" />
+    <Compile Include="Helpers\WindowsInstallerHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="..\SolutionVersion.cs">
       <Link>Properties\SolutionVersion.cs</Link>
@@ -84,6 +111,12 @@
     <Compile Include="Shared\ChocolateyCmdlet.cs" />
     <Compile Include="Shared\ChocolateyPathType.cs" />
     <Compile Include="Shared\EnvironmentVariables.cs" />
+    <Compile Include="Shared\JankySwitchTransformAttribute.cs" />
+    <Compile Include="Shared\ProcessHandler.cs" />
+    <Compile Include="Shared\ProxySettings.cs" />
+    <Compile Include="Shared\RemoteDownloader.cs" />
+    <Compile Include="Shared\PreferenceVariables.cs" />
+    <Compile Include="Shared\WebResources.cs" />
     <Compile Include="Win32\NativeMethods.cs" />
   </ItemGroup>
   <ItemGroup>

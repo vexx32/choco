@@ -323,6 +323,22 @@ namespace chocolatey
             return input;
         }
 
+        internal static string AsFileSizeString(this double size)
+        {
+            IList<string> units = new List<string>(new[] { "B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB" });
+            foreach (var unit in units)
+            {
+                if (size < 1024)
+                {
+                    return string.Format("{0:0.##} {1}", size, unit);
+                }
+
+                size /= 1024;
+            }
+
+            return string.Format("{0:0.##} YB", size);
+        }
+
 #pragma warning disable IDE0022, IDE1006
         [Obsolete("This overload is deprecated and will be removed in v3.")]
         public static string format_with(this string input, params object[] formatting)
