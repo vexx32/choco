@@ -17,6 +17,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System;
 using System.Management.Automation;
 using System.Reflection;
@@ -121,6 +122,17 @@ namespace Chocolatey.PowerShell.Helpers
             return (T)LanguagePrimitives.ConvertTo(value, typeof(T));
         }
 
+        public static void CopyFile(PSCmdlet cmdlet, string source, string destination, bool overwriteExisting)
+        {
+            cmdlet.InvokeProvider.Item.Copy(path: new string[] { source }, destinationPath: destination, recurse: false, copyContainers: CopyContainers.CopyTargetContainer, force: overwriteExisting, literalPath: true);
+        }
+
+        public static void DeleteFile(PSCmdlet cmdlet, string path)
+        {
+            cmdlet.InvokeProvider.Item.Remove(path, false);
+        }
+
+
         /// <summary>
         /// Checks for the existence of the target <paramref name="directory"/>, creating it if it doesn't exist.
         /// </summary>
@@ -132,6 +144,63 @@ namespace Chocolatey.PowerShell.Helpers
             {
                 NewDirectory(cmdlet, directory);
             }
+        }
+
+        public static Collection<PSObject> GetChildItem(PSCmdlet cmdlet, string[] path, bool recurse, bool force, bool literalPath)
+        {
+            return cmdlet.InvokeProvider.ChildItem.Get(path, recurse, force, literalPath);
+        }
+
+        public static Collection<PSObject> GetChildItem(PSCmdlet cmdlet, string path, bool recurse)
+        {
+            return cmdlet.InvokeProvider.ChildItem.Get(path, recurse);
+        }
+
+        public static Collection<PSObject> GetChildItem(PSCmdlet cmdlet, string path)
+        {
+            return GetChildItem(cmdlet, path, recurse: false);
+        }
+
+        public static string GetDirectoryName(PSCmdlet cmdlet, string path)
+        {
+            return cmdlet.SessionState.Path.ParseChildName(GetParentDirectory(cmdlet, path));
+        }
+
+        public static FileInfo GetFileInfoFor(PSCmdlet cmdlet, string path)
+        {
+            return (FileInfo)cmdlet.InvokeProvider.Item.Get(path).FirstOrDefault()?.BaseObject;
+        }
+
+        public static string GetFullPath(PSCmdlet cmdlet, string path)
+        {
+            return string.IsNullOrWhiteSpace(path)
+                        ? string.Empty
+                        : CombinePaths(cmdlet, GetParentDirectory(cmdlet, path), GetFileName(path));
+        }
+
+        public static Collection<PSObject> GetItem(PSCmdlet cmdlet, string path, bool force, bool literalPath)
+        {
+            return cmdlet.InvokeProvider.Item.Get(new[] { path }, force, literalPath);
+        }
+
+        public static Collection<PSObject> GetItem(PSCmdlet cmdlet, string path)
+        {
+            return GetItem(cmdlet, path, force: false, literalPath: false);
+        }
+
+        public static Collection<PSObject> GetItem(PSCmdlet cmdlet, string path, bool literalPath)
+        {
+            return GetItem(cmdlet, path, force: false, literalPath);
+        }
+
+        public static FileInfo GetFileInfo(PSCmdlet cmdlet, string path)
+        {
+            return ConvertTo<FileInfo>(GetItem(cmdlet, path).FirstOrDefault());
+        }
+
+        public static FileInfo GetFileInfo(PSCmdlet cmdlet, string path, bool literalPath)
+        {
+            return ConvertTo<FileInfo>(GetItem(cmdlet, path, literalPath).FirstOrDefault());
         }
 
         /// <summary>
@@ -247,6 +316,72 @@ namespace Chocolatey.PowerShell.Helpers
             return result ?? new Version(2, 0);
         }
 
+        public static bool IsLike(string value, string pattern)
+        {
+            return new WildcardPattern(pattern, WildcardOptions.IgnoreCase | WildcardOptions.CultureInvariant).IsMatch(value);
+        }
+
+        public static string Replace(string input, string pattern, string replacement, bool caseSensitive)
+        {
+            return Regex.Replace(input, pattern, replacement, caseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase);
+        }
+
+        public static string Replace(string input, string pattern, string replacement)
+        {
+            return Replace(input, pattern, replacement, caseSensitive: false);
+        }
+
+        public static void RemoveItem(PSCmdlet cmdlet, string path)
+        {
+            cmdlet.InvokeProvider.Item.Remove(path, recurse: false);
+        }
+
+        public static void RemoveItem(PSCmdlet cmdlet, string path, bool recurse)
+        {
+            cmdlet.InvokeProvider.Item.Remove(path, recurse);
+        }
+
+        public static void RemoveItem(PSCmdlet cmdlet, string[] path, bool recurse, bool force, bool literalPath)
+        {
+            cmdlet.InvokeProvider.Item.Remove(path, recurse, force, literalPath);
+        }
+
+        public static void SetExitCode(PSCmdlet cmdlet, int exitCode)
+        {
+            Environment.SetEnvironmentVariable(EnvironmentVariables.Package.ChocolateyExitCode, exitCode.ToString());
+            cmdlet.Host.SetShouldExit(exitCode);
+        }
+
+        private static void WriteConsoleLine(string message, ConsoleColor color)
+        {
+            var oldColor = Console.ForegroundColor;
+            Console.ForegroundColor = color;
+
+            try
+            {
+                Console.WriteLine(message);
+            }
+            finally
+            {
+                Console.ForegroundColor = oldColor;
+            }
+        }
+
+        public static void WriteDebug(PSCmdlet cmdlet, string message)
+        {
+            cmdlet.WriteDebug(message);
+        }
+
+        public static void WriteVerbose(PSCmdlet cmdlet, string message)
+        {
+            cmdlet.WriteVerbose(message);
+        }
+
+        public static void WriteWarning(PSCmdlet cmdlet, string message)
+        {
+            cmdlet.WriteWarning(message);
+        }
+
         /// <summary>
         /// Turns a relative path into a full path based on the current context the <paramref name="cmdlet"/> is running in,
         /// without ensuring that the path actually exists.
@@ -309,16 +444,6 @@ namespace Chocolatey.PowerShell.Helpers
             return NewItem(cmdlet, path, itemType: "Directory");
         }
 
-        public static string Replace(string input, string pattern, string replacement, bool caseSensitive)
-        {
-            return Regex.Replace(input, pattern, replacement, caseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase);
-        }
-
-        public static string Replace(string input, string pattern, string replacement)
-        {
-            return Replace(input, pattern, replacement, caseSensitive: false);
-        }
-
         public static void SetContent(PSCmdlet cmdlet, string path, string content, Encoding encoding)
         {
             var fullPath = GetUnresolvedPath(cmdlet, path);
@@ -347,13 +472,6 @@ namespace Chocolatey.PowerShell.Helpers
             writer.Close();
             writer.Dispose();
         }
-
-        public static void SetExitCode(PSCmdlet cmdlet, int exitCode)
-        {
-            Environment.SetEnvironmentVariable(EnvironmentVariables.Package.ChocolateyExitCode, exitCode.ToString());
-            cmdlet.Host.SetShouldExit(exitCode);
-        }
-
 
         /// <summary>
         /// Gets the path to the location of <c>powershell.exe</c>.

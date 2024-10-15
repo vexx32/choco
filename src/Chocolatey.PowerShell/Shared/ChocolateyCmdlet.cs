@@ -93,6 +93,16 @@ namespace Chocolatey.PowerShell.Shared
             }
         }
 
+        protected bool Debug
+        {
+            get
+            {
+                return MyInvocation.BoundParameters.ContainsKey("Debug")
+                    ? PSHelper.ConvertTo<SwitchParameter>(MyInvocation.BoundParameters["Debug"]).ToBool()
+                    : PSHelper.ConvertTo<ActionPreference>(GetVariableValue(PreferenceVariables.Debug)) != ActionPreference.SilentlyContinue;
+            }
+        }
+
         /// <summary>
         /// For compatibility reasons, we always add the -IgnoredArguments parameter, so that newly added parameters
         /// won't break things too much if a package is run with an older version of Chocolatey.
@@ -107,6 +117,48 @@ namespace Chocolatey.PowerShell.Shared
         /// unless there are concerns about potentially sensitive information making it into a log file from the parameters of the command.
         /// </summary>
         protected virtual bool Logging { get; } = true;
+
+        private void WriteCmdletCallDebugMessage()
+        {
+            if (!Logging)
+            {
+                return;
+            }
+
+            var logMessage = new StringBuilder()
+                .Append("Running ")
+                .Append(MyInvocation.InvocationName);
+
+            foreach (var param in MyInvocation.BoundParameters)
+            {
+                var paramNameLower = param.Key.ToLower();
+
+                if (paramNameLower == "ignoredarguments")
+                {
+                    continue;
+                }
+
+                var paramValue = paramNameLower == "sensitivestatements" || paramNameLower == "password"
+                    ? "[REDACTED]"
+                    : param.Value is IList list
+                        ? string.Join(" ", list)
+                        : LanguagePrimitives.ConvertTo(param.Value, typeof(string));
+
+                logMessage.Append($" -{param.Key} '{paramValue}'");
+            }
+
+            WriteDebug(logMessage.ToString());
+        }
+
+        private void WriteCmdletCompletionDebugMessage()
+        {
+            if (!Logging)
+            {
+                return;
+            }
+
+            WriteDebug($"Finishing '{MyInvocation.InvocationName}'");
+        }
 
         private void WriteWarningForDeprecatedCommands()
         {
@@ -217,46 +269,44 @@ namespace Chocolatey.PowerShell.Shared
             PSHelper.WriteObject(this, value);
         }
 
-        protected void WriteCmdletCallDebugMessage()
+        /// <summary>
+        /// Get an environment variable from the current process scope by name.
+        /// </summary>
+        /// <param name="name">The name of the variable to retrieve.</param>
+        /// <returns>The value of the environment variable.</returns>
+        protected string EnvironmentVariable(string name)
         {
-            if (!Logging)
-            {
-                return;
-            }
-
-            var logMessage = new StringBuilder()
-                .Append("Running ")
-                .Append(MyInvocation.InvocationName);
-
-            foreach (var param in MyInvocation.BoundParameters)
-            {
-                var paramNameLower = param.Key.ToLower();
-
-                if (paramNameLower == "ignoredarguments")
-                {
-                    continue;
-                }
-
-                var paramValue = paramNameLower == "sensitivestatements" || paramNameLower == "password"
-                    ? "[REDACTED]"
-                    : param.Value is IList list
-                        ? string.Join(" ", list)
-                        : LanguagePrimitives.ConvertTo(param.Value, typeof(string));
-
-                logMessage.Append($" -{param.Key} '{paramValue}'");
-            }
-
-            WriteDebug(logMessage.ToString());
+            return EnvironmentHelper.GetVariable(name);
         }
 
-        protected void WriteCmdletCompletionDebugMessage()
+        /// <summary>
+        /// Gets an environment variable from the target scope by name, expanding
+        /// environment variable tokens present in the value.
+        /// </summary>
+        /// <param name="name">The name of the variable to retrieve.</param>
+        /// <param name="scope">The scope to retrieve the variable from.</param>
+        /// <returns>The value of the environment variable.</returns>
+        protected string EnvironmentVariable(string name, EnvironmentVariableTarget scope)
         {
-            if (!Logging)
-            {
-                return;
-            }
+            return EnvironmentVariable(name, scope, preserveVariables: false);
+        }
 
-            WriteDebug($"Finishing '{MyInvocation.InvocationName}'");
+        /// <summary>
+        /// Gets an environment variable from the target scope by name, expanding
+        /// environment variable tokens present in the value only if specified.
+        /// </summary>
+        /// <param name="name">The name of the variable to retrieve.</param>
+        /// <param name="scope">The scope to retrieve the variable from.</param>
+        /// <param name="preserveVariables"><c>True</c> if variables should be preserved, <c>False</c> if variables should be expanded.</param>
+        /// <returns>The value of the environment variable.</returns>
+        protected string EnvironmentVariable(string name, EnvironmentVariableTarget scope, bool preserveVariables)
+        {
+            return EnvironmentHelper.GetVariable(this, name, scope, preserveVariables);
+        }
+
+        protected bool IsEqual(object first, object second)
+        {
+            return PSHelper.IsEqual(first, second);
         }
     }
 }

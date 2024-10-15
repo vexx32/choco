@@ -138,6 +138,7 @@ namespace Chocolatey.PowerShell.Helpers
             }
         }
 
+
         /// <summary>
         /// Sets the value of an environment variable for the current process only.
         /// </summary>
