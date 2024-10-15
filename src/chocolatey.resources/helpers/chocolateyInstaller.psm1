@@ -134,6 +134,17 @@ if (Test-Path $extensionsPath) {
         }
 }
 
+Set-Alias -Name 'Start-ChocolateyProcessAsAdmin' -Value 'Start-ChocolateyProcess'
+Set-Alias -Name 'Invoke-ChocolateyProcess' -Value 'Start-ChocolateyProcess'
+Set-Alias -Name 'Get-ChocolateyUnzip' -Value 'Expand-ChocolateyArchive'
+Set-Alias -Name 'Get-ProcessorBits' -Value 'Get-OSArchitectureWidth'
+Set-Alias -Name 'Get-OSBitness' -Value 'Get-OSArchitectureWidth'
+Set-Alias -Name 'refreshenv' -Value 'Update-SessionEnvironment'
+Set-Alias -Name 'Get-EnvironmentVariableNames' -Value 'Get-EnvironmentVariableName'
+Set-Alias -Name 'Generate-BinFile' -Value 'New-Shim'
+Set-Alias -Name 'Add-BinFile' -Value 'New-Shim'
+Set-Alias -Name 'Install-BinFile' -Value 'New-Shim'
+Set-Alias -Name 'Install-ChocolateyInstallPackage' -Value 'Invoke-PackageInstaller'
 Set-Alias -Name 'Get-CheckSumValid' -Value 'Assert-ValidChecksum'
 
 # Exercise caution and test _thoroughly_ with AND without the licensed extension installed

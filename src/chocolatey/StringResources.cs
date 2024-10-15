@@ -55,6 +55,46 @@ namespace chocolatey
             [EditorBrowsable(EditorBrowsableState.Never)]
             [Browsable(false)]
             internal const string PackageNuspecVersion = "packageNuspecVersion";
+
+            [EditorBrowsable(EditorBrowsableState.Never)]
+            [Browsable(false)]
+            internal const string ChocolateyRequestTimeout = "chocolateyRequestTimeout";
+
+            [EditorBrowsable(EditorBrowsableState.Never)]
+            [Browsable(false)]
+            internal const string ChocolateyResponseTimeout = "chocolateyResponseTimeout";
+
+            [EditorBrowsable(EditorBrowsableState.Never)]
+            [Browsable(false)]
+            internal const string ChocolateyUrlOverride = "chocolateyUrlOverride";
+
+            [EditorBrowsable(EditorBrowsableState.Never)]
+            [Browsable(false)]
+            internal const string ChocolateyUrl64BitOverride = "chocolateyUrl64BitOverride";
+
+            [EditorBrowsable(EditorBrowsableState.Never)]
+            [Browsable(false)]
+            internal const string ChocolateyForceX86 = "chocolateyForceX86";
+
+            [EditorBrowsable(EditorBrowsableState.Never)]
+            [Browsable(false)]
+            internal const string ChocolateyChecksum32 = "chocolateyChecksum32";
+
+            [EditorBrowsable(EditorBrowsableState.Never)]
+            [Browsable(false)]
+            internal const string ChocolateyChecksumType32 = "chocolateyChecksumType32";
+
+            [EditorBrowsable(EditorBrowsableState.Never)]
+            [Browsable(false)]
+            internal const string ChocolateyChecksum64 = "chocolateyChecksum64";
+
+            [EditorBrowsable(EditorBrowsableState.Never)]
+            [Browsable(false)]
+            internal const string ChocolateyChecksumType64 = "chocolateyChecksumType64";
+
+            [EditorBrowsable(EditorBrowsableState.Never)]
+            [Browsable(false)]
+            internal static string ChocolateyPackageName = "chocolateyPackageName";
         }
 
         public static class ErrorMessages

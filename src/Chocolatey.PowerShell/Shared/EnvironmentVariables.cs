@@ -18,9 +18,16 @@ using System.ComponentModel;
 
 namespace Chocolatey.PowerShell.Shared
 {
+    /// <summary>
+    /// Names of available environment variables that will be created or used by provided
+    /// PowerShell commands as part of executing Chocolatey CLI.
+    /// </summary>
+    /// <remarks>
+    /// DEV NOTICE: Mark anything that is not meant for public consumption as
+    /// internal constants and not browsable, even if used in other projects.
+    /// </remarks>
     public static class EnvironmentVariables
     {
-        public const string ChocolateyLastPathUpdate = "ChocolateyLastPathUpdate";
         public const string ComputerName = "COMPUTERNAME";
         public const string Path = "PATH";
         public const string ProcessorArchitecture = "PROCESSOR_ARCHITECTURE";
@@ -40,6 +47,136 @@ namespace Chocolatey.PowerShell.Shared
         /// </summary>
         public const string ChocolateyPowerShellHost = nameof(ChocolateyPowerShellHost);
 
+        /// The date and time that the system environment variables (for example, PATH) were last updated by Chocolatey
+        /// </summary>
+        /// <remarks>
+        /// Will be set during package installations if the system environment variables are updated / refreshed.
+        /// Not otherwise used by anything in Chocolatey itself.
+        /// </remarks>
+        public const string ChocolateyLastPathUpdate = "ChocolateyLastPathUpdate";
+
+        /// <summary>
+        /// The version of the package that is being handled as it is defined in the embedded
+        /// nuspec file.
+        /// </summary>
+        /// <remarks>
+        /// Will be sets during package installs, upgrades and uninstalls.
+        /// Environment variable is only for internal uses.
+        /// </remarks>
+        /// <seealso cref="PackageNuspecVersion" />
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyPackageNuspecVersion = nameof(ChocolateyPackageNuspecVersion);
+
+        /// <summary>
+        /// The version of the package that is being handled as it is defined in the embedded
+        /// nuspec file.
+        /// </summary>
+        /// <remarks>
+        /// Will be sets during package installs, upgrades and uninstalls.
+        /// Environment variable is only for internal uses.
+        /// </remarks>
+        /// <seealso cref="ChocolateyPackageNuspecVersion" />
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string PackageNuspecVersion = nameof(PackageNuspecVersion);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyRequestTimeout = nameof(ChocolateyRequestTimeout);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyResponseTimeout = nameof(ChocolateyResponseTimeout);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyUrlOverride = nameof(ChocolateyUrlOverride);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyUrl64BitOverride = nameof(ChocolateyUrl64BitOverride);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyForceX86 = nameof(ChocolateyForceX86);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyChecksum32 = nameof(ChocolateyChecksum32);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyChecksumType32 = nameof(ChocolateyChecksumType32);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyChecksum64 = nameof(ChocolateyChecksum64);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyChecksumType64 = nameof(ChocolateyChecksumType64);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyPackageName = nameof(ChocolateyPackageName);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyPackageFolder = nameof(ChocolateyPackageFolder);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string PackageFolder = nameof(PackageFolder);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyInstallDirectoryPackage = nameof(ChocolateyInstallDirectoryPackage);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyPackageExitCode = nameof(ChocolateyPackageExitCode);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyPackageInstallLocation = nameof(ChocolateyPackageInstallLocation);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyPackageParameters = nameof(ChocolateyPackageParameters);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyPackageParametersSensitive = nameof(ChocolateyPackageParametersSensitive);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyToolsLocation = nameof(ChocolateyToolsLocation);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyBinRoot = nameof(ChocolateyBinRoot);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyInstallerType = nameof(ChocolateyInstallerType);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyInstallArguments = nameof(ChocolateyInstallArguments);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyInstallOverride = nameof(ChocolateyInstallOverride);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyExitCode = nameof(ChocolateyExitCode);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Browsable(false)]
+        public const string ChocolateyPackageVersion = nameof(ChocolateyPackageVersion);
+        
         /// <summary>
         /// When this environment variable is set to 'true', checksum validation is skipped.
         /// Typically set when running under Chocolatey if <c>--ignore-checksums</c> is passed or the feature <c>checksumFiles</c> is turned off.
@@ -63,17 +200,5 @@ namespace Chocolatey.PowerShell.Shared
         [EditorBrowsable(EditorBrowsableState.Never)]
         [Browsable(false)]
         public const string ChocolateyAllowEmptyChecksumsSecure = nameof(ChocolateyAllowEmptyChecksumsSecure);
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Browsable(false)]
-        public const string ChocolateyPackageName = nameof(ChocolateyPackageName);
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Browsable(false)]
-        public const string ChocolateyPackageFolder = nameof(ChocolateyPackageFolder);
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Browsable(false)]
-        public const string PackageFolder = nameof(PackageFolder);
     }
 }
