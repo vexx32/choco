@@ -60,6 +60,8 @@
   <ItemGroup>
     <Compile Include="Commands\GetChocolateyPathCommand.cs" />
     <Compile Include="Commands\AssertValidChecksumCommand.cs" />
+    <Compile Include="Helpers\Container.cs" />
+    <Compile Include="Helpers\IChecksumValidator.cs" />
     <Compile Include="Shared\ChecksumExeNotFoundException.cs" />
     <Compile Include="Shared\ChecksumVerificationFailedException.cs" />
     <Compile Include="Shared\ChecksumMissingException.cs" />

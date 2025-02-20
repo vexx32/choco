@@ -44,7 +44,8 @@ namespace Chocolatey.PowerShell.Commands
         {
             try
             {
-                ChecksumValidator.AssertChecksumValid(this, Path, Checksum, ChecksumType, Url);
+                var validator = Container.GetInstance<IChecksumValidator>(this);
+                validator.AssertChecksumValid(Path, Checksum, ChecksumType, Url);
             }
             catch (ChecksumMissingException error)
             {

@@ -29,19 +29,33 @@ namespace Chocolatey.PowerShell.Helpers
     /// <summary>
     /// Helper class to validate checksums. Used by <see cref="Commands.AssertValidChecksumCommand"/>, and any other commands that need to validate checksums.
     /// </summary>
-    public static class ChecksumValidator
+    public class ChecksumValidator : IChecksumValidator
     {
+        /// <summary>
+        /// The PowerShell Cmdlet that is calling this helper.
+        /// </summary>
+        protected PSCmdlet Cmdlet { get; }
+
+        /// <summary>
+        /// Creates a new instance of <see cref="ChecksumValidator"/>.
+        /// </summary>
+        /// <param name="cmdlet">The PowerShell Cmdlet that is calling this helper.</param>
+        internal ChecksumValidator(PSCmdlet cmdlet)
+        {
+            Cmdlet = cmdlet;
+        }
+
         /// <summary>
         /// Tests whether a given <paramref name="checksum"/> matches the checksum of a given file.
         /// </summary>
-        /// <param name="cmdlet">The cmdlet calling the method.</param>
+        /// <param name="Cmdlet">The cmdlet calling the method.</param>
         /// <param name="path">The path to the file to verify the checksum of.</param>
         /// <param name="checksum">The checksum value to validate against.</param>
         /// <param name="checksumType">The type of the checksum.</param>
         /// <param name="url">The original url that the file was downloaded from, if any.</param>
         /// <param name="error">If this method returns false, this will contain an exception that can be raised if needed.</param>
         /// <returns>True if the actual checksum of the file matches the given checksum, otherwise False.</returns>
-        public static bool IsValid(PSCmdlet cmdlet, string path, string checksum, ChecksumType? checksumType, string url, out Exception error)
+        public bool IsValid(string path, string checksum, ChecksumType? checksumType, string url, out Exception error)
         {
             if (checksumType is null)
             {
@@ -50,7 +64,7 @@ namespace Chocolatey.PowerShell.Helpers
 
             if (IsEqual(Environment.GetEnvironmentVariable(EnvironmentVariables.ChocolateyIgnoreChecksums), "true"))
             {
-                cmdlet.WriteWarning("Ignoring checksums due to feature checksumFiles turned off or option --ignore-checksums set.");
+                Cmdlet.WriteWarning("Ignoring checksums due to feature checksumFiles turned off or option --ignore-checksums set.");
                 error = null;
                 return true;
             }
@@ -59,7 +73,7 @@ namespace Chocolatey.PowerShell.Helpers
             {
                 if (IsEqual(Environment.GetEnvironmentVariable(EnvironmentVariables.ChocolateyAllowEmptyChecksums), "true"))
                 {
-                    cmdlet.WriteDebug("Empty checksums are allowed due to allowEmptyChecksums feature or option.");
+                    Cmdlet.WriteDebug("Empty checksums are allowed due to allowEmptyChecksums feature or option.");
                     error = null;
                     return true;
                 }
@@ -68,21 +82,21 @@ namespace Chocolatey.PowerShell.Helpers
 
                 if (isHttpsUrl && IsEqual(Environment.GetEnvironmentVariable(EnvironmentVariables.ChocolateyAllowEmptyChecksumsSecure), "true"))
                 {
-                    cmdlet.WriteDebug("Download from HTTPS source with feature 'allowEmptyChecksumsSecure' enabled.");
+                    Cmdlet.WriteDebug("Download from HTTPS source with feature 'allowEmptyChecksumsSecure' enabled.");
                     error = null;
                     return true;
                 }
 
-                cmdlet.WriteWarning("Missing package checksums are not allowed (by default for HTTP/FTP, \n HTTPS when feature 'allowEmptyChecksumsSecure' is disabled) for \n safety and security reasons. Although we strongly advise against it, \n if you need this functionality, please set the feature \n 'allowEmptyChecksums' ('choco feature enable -n \n allowEmptyChecksums') \n or pass in the option '--allow-empty-checksums'. You can also pass \n checksums at runtime (recommended). See `choco install -?` for details.");
-                cmdlet.WriteDebug("If you are a maintainer attempting to determine the checksum for packaging purposes, please run \n 'choco install checksum' and run 'checksum -t sha256 -f $file' \n Ensure you do this for all remote resources.");
+                Cmdlet.WriteWarning("Missing package checksums are not allowed (by default for HTTP/FTP, \n HTTPS when feature 'allowEmptyChecksumsSecure' is disabled) for \n safety and security reasons. Although we strongly advise against it, \n if you need this functionality, please set the feature \n 'allowEmptyChecksums' ('choco feature enable -n \n allowEmptyChecksums') \n or pass in the option '--allow-empty-checksums'. You can also pass \n checksums at runtime (recommended). See `choco install -?` for details.");
+                Cmdlet.WriteDebug("If you are a maintainer attempting to determine the checksum for packaging purposes, please run \n 'choco install checksum' and run 'checksum -t sha256 -f $file' \n Ensure you do this for all remote resources.");
 
                 if (GetPSVersion().Major >= 4)
                 {
-                    cmdlet.WriteDebug("Because you are running PowerShell with a major version of v4 or greater, you could also opt to run \n '(Get-FileHash -Path $file -Algorithm SHA256).Hash' \n rather than install a separate tool.");
+                    Cmdlet.WriteDebug("Because you are running PowerShell with a major version of v4 or greater, you could also opt to run \n '(Get-FileHash -Path $file -Algorithm SHA256).Hash' \n rather than install a separate tool.");
                 }
 
                 if (IsEqual(Environment.GetEnvironmentVariable(EnvironmentVariables.ChocolateyPowerShellHost), "true")
-                    && !(cmdlet.Host is null))
+                    && !(Cmdlet.Host is null))
                 {
                     const string prompt = "Do you wish to allow the install to continue (not recommended)?";
                     var info = string.Format(
@@ -96,7 +110,7 @@ namespace Chocolatey.PowerShell.Helpers
                         new ChoiceDescription("&No"),
                     };
 
-                    var selection = cmdlet.Host.UI.PromptForChoice(info, prompt, choices, defaultChoice: 1);
+                    var selection = Cmdlet.Host.UI.PromptForChoice(info, prompt, choices, defaultChoice: 1);
 
                     if (selection == 0)
                     {
@@ -113,27 +127,27 @@ namespace Chocolatey.PowerShell.Helpers
                 return false;
             }
 
-            if (!FileExists(cmdlet, path))
+            if (!FileExists(Cmdlet, path))
             {
                 error = new FileNotFoundException($"Unable to checksum a file that doesn't exist - Could not find file '{path}'", path);
                 return false;
             }
 
-            var checksumExe = CombinePaths(cmdlet, GetInstallLocation(cmdlet), "tools", "checksum.exe");
-            if (!FileExists(cmdlet, checksumExe))
+            var checksumExe = CombinePaths(Cmdlet, GetInstallLocation(Cmdlet), "tools", "checksum.exe");
+            if (!FileExists(Cmdlet, checksumExe))
             {
                 error = new FileNotFoundException("Unable to locate 'checksum.exe', your Chocolatey installation may be incomplete or damaged. Try reinstalling chocolatey with 'choco install chocolatey --force'.", checksumExe);
                 return false;
             }
 
-            cmdlet.WriteDebug($"checksum.exe found at '{checksumExe}'");
+            Cmdlet.WriteDebug($"checksum.exe found at '{checksumExe}'");
             var arguments = string.Format(
                 "-c=\"{0}\" -t=\"{1}\" -f=\"{2}\"",
                 checksum,
                 checksumType.ToString().ToLower(),
                 path);
 
-            cmdlet.WriteDebug($"Executing command ['{checksumExe}' {arguments}]");
+            Cmdlet.WriteDebug($"Executing command ['{checksumExe}' {arguments}]");
 
             var process = new Process
             {
@@ -150,7 +164,7 @@ namespace Chocolatey.PowerShell.Helpers
             var exitCode = process.ExitCode;
             process.Dispose();
 
-            cmdlet.WriteDebug($"Command ['{checksumExe}' {arguments}] exited with '{exitCode}'");
+            Cmdlet.WriteDebug($"Command ['{checksumExe}' {arguments}] exited with '{exitCode}'");
 
             if (exitCode != 0)
             {
@@ -170,9 +184,9 @@ namespace Chocolatey.PowerShell.Helpers
         /// <param name="checksum">The expected checksum value.</param>
         /// <param name="checksumType">The type of the checksum to look for.</param>
         /// <param name="url">The url the file was downloaded from originally, if any.</param>
-        public static void AssertChecksumValid(PSCmdlet cmdlet, string path, string checksum, ChecksumType? checksumType, string url)
+        public void AssertChecksumValid(string path, string checksum, ChecksumType? checksumType, string url)
         {
-            if (!IsValid(cmdlet, path, checksum, checksumType, url, out var exception))
+            if (!IsValid(path, checksum, checksumType, url, out var exception))
             {
                 throw exception;
             }

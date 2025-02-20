@@ -1,0 +1,222 @@
+// Copyright © 2017 - 2025 Chocolatey Software, Inc
+// Copyright © 2011 - 2017 RealDimensions Software, LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+//
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System;
+using NUnit.Framework;
+using System.IO;
+
+namespace Chocolatey.PowerShell.Tests
+{
+    [SetUpFixture]
+    public class NUnitSetup
+    {
+        [OneTimeSetUp]
+        public virtual void BeforeEverything()
+        {
+            Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
+        }
+
+        [OneTimeTearDown]
+        public void AfterEverything()
+        {
+        }
+    }
+
+    [TestFixture]
+    public abstract class TinySpec
+    {
+        [OneTimeSetUp]
+        public void Setup()
+        {
+            // Reset the current exit code to 0 so that any tests which may modify it do not affect other tests.
+            Environment.ExitCode = default;
+
+            Context();
+            Because();
+        }
+
+        public abstract void Context();
+
+        public abstract void Because();
+
+        [SetUp]
+        public void EachSpecSetup()
+        {
+            BeforeEachSpec();
+        }
+
+        public virtual void BeforeEachSpec()
+        {
+        }
+
+        [TearDown]
+        public void EachSpecTearDown()
+        {
+            AfterEachSpec();
+        }
+
+        public virtual void AfterEachSpec()
+        {
+        }
+
+        [OneTimeTearDown]
+        public void TearDown()
+        {
+            AfterObservations();
+        }
+
+        public virtual void AfterObservations()
+        {
+        }
+    }
+
+    public class ObservationAttribute : TestAttribute
+    {
+    }
+
+    public class FactAttribute : ObservationAttribute
+    {
+    }
+
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+    public class InlineDataAttribute : TestCaseAttribute
+    {
+        public InlineDataAttribute(params object[] data)
+            : base(data)
+        {
+        }
+    }
+
+    public class ExplicitAttribute : NUnit.Framework.ExplicitAttribute
+    {
+    }
+
+
+    public class ConcernForAttribute : CategoryAttribute
+    {
+        public ConcernForAttribute(string name)
+            : base($"ConcernFor - {name}")
+        {
+        }
+    }
+
+    public class NotWorkingAttribute : CategoryAttribute
+    {
+        public string Reason { get; set; }
+
+        public NotWorkingAttribute(string reason)
+            : base("NotWorking")
+        {
+            Reason = reason;
+        }
+    }
+
+    public class PendingAttribute : IgnoreAttribute
+    {
+        public PendingAttribute(string reason)
+            : base($"Pending test - {reason}")
+        {
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+    public class BrokenAttribute : CategoryAttribute
+    {
+        public BrokenAttribute()
+            : base("Broken")
+        {
+        }
+    }
+
+    public class WindowsOnlyAttribute : PlatformAttribute
+    {
+        public WindowsOnlyAttribute()
+        {
+            Exclude = "Mono, Linux, MacOsX, Linux";
+        }
+
+        public WindowsOnlyAttribute(string platforms) : base(platforms)
+        {
+        }
+    }
+
+    public static class Categories
+    {
+        [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
+        public sealed class IntegrationAttribute : CategoryAttribute
+        {
+            public IntegrationAttribute()
+                : base("Integration")
+            {
+            }
+        }
+
+        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
+        public sealed class SemVer20Attribute : CategoryAttribute
+        {
+            public SemVer20Attribute()
+                : base("SemVer 2.0")
+            {
+            }
+        }
+
+        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
+        public sealed class RuleEngine : CategoryAttribute
+        {
+            public RuleEngine()
+                : base("Rule Engine")
+            {
+            }
+        }
+
+        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
+        public sealed class LegacySemVerAttribute : CategoryAttribute
+        {
+            public LegacySemVerAttribute()
+                : base("Legacy SemVer")
+            {
+            }
+        }
+
+        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
+        public sealed class ExceptionHandlingAttribute : CategoryAttribute
+        {
+            public ExceptionHandlingAttribute()
+                : base("Exception Handling")
+            {
+            }
+        }
+
+        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
+        public sealed class LoggingAttribute : CategoryAttribute
+        {
+            public LoggingAttribute()
+                : base("Logging")
+            {
+            }
+        }
+
+        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
+        public sealed class UncAttribute : PlatformAttribute
+        {
+            public UncAttribute()
+                : base("Win")
+            {
+                Reason = "UNC Test paths are only available when running on Windows";
+            }
+        }
+    }
+}
