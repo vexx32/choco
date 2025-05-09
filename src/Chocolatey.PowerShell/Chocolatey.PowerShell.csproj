@@ -65,6 +65,9 @@
     <Compile Include="Commands\GetChocolateyPathCommand.cs" />
     <Compile Include="Commands\AssertValidChecksumCommand.cs" />
     <Compile Include="Helpers\ConfigHelper.cs" />
+    <Compile Include="Commands\ExpandChocolateyArchiveCommand.cs" />
+    <Compile Include="Shared\SevenZipException.cs" />
+    <Compile Include="Helpers\SevenZipHelper.cs" />
     <Compile Include="Shared\ChecksumExeNotFoundException.cs" />
     <Compile Include="Shared\ChecksumVerificationFailedException.cs" />
     <Compile Include="Shared\ChecksumMissingException.cs" />
@@ -75,6 +78,7 @@
     <Compile Include="Commands\TestProcessAdminRightsCommand.cs" />
     <Compile Include="Commands\UninstallChocolateyPathCommand.cs" />
     <Compile Include="Commands\UpdateSessionEnvironmentCommand.cs" />
+    <Compile Include="Helpers\ArchitectureWidth.cs" />
     <Compile Include="Helpers\ChecksumValidator.cs" />
     <Compile Include="Helpers\Elevation.cs" />
     <Compile Include="Helpers\EnvironmentHelper.cs" />
@@ -90,6 +94,7 @@
     <Compile Include="Shared\ChocolateyPathType.cs" />
     <Compile Include="Shared\EnvironmentNames.cs" />
     <Compile Include="Shared\EnvironmentVariables.cs" />
+    <Compile Include="Shared\ProcessHandler.cs" />
     <Compile Include="Win32\NativeMethods.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -20,8 +20,11 @@ using System.IO;
 using System;
 using System.Management.Automation;
 using System.Reflection;
+using System.Text;
+using System.Text.RegularExpressions;
 
 using static chocolatey.StringResources;
+using chocolatey;
 
 namespace Chocolatey.PowerShell.Helpers
 {
@@ -193,6 +196,16 @@ namespace Chocolatey.PowerShell.Helpers
         }
 
         /// <summary>
+        /// Gets the current filesystem directory location in the session.
+        /// </summary>
+        /// <param name="cmdlet">The cmdlet calling the method.</param>
+        /// <returns>The path to the current directory.</returns>
+        public static string GetCurrentDirectory(PSCmdlet cmdlet)
+        {
+            return cmdlet.SessionState.Path.CurrentFileSystemLocation?.ToString();
+        }
+
+        /// <summary>
         /// Gets the parent directory of a given path.
         /// </summary>
         /// <param name="cmdlet">The cmdlet calling the method.</param>
@@ -295,6 +308,52 @@ namespace Chocolatey.PowerShell.Helpers
         {
             return NewItem(cmdlet, path, itemType: "Directory");
         }
+
+        public static string Replace(string input, string pattern, string replacement, bool caseSensitive)
+        {
+            return Regex.Replace(input, pattern, replacement, caseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase);
+        }
+
+        public static string Replace(string input, string pattern, string replacement)
+        {
+            return Replace(input, pattern, replacement, caseSensitive: false);
+        }
+
+        public static void SetContent(PSCmdlet cmdlet, string path, string content, Encoding encoding)
+        {
+            var fullPath = GetUnresolvedPath(cmdlet, path);
+
+            using (var stream = File.OpenWrite(fullPath))
+            using (var writer = new StreamWriter(stream, encoding))
+            {
+                WriteContent(writer, content);
+            }
+        }
+
+        public static void SetContent(PSCmdlet cmdlet, string path, string content)
+        {
+            var fullPath = GetUnresolvedPath(cmdlet, path);
+
+            using (var writer = new StreamWriter(fullPath))
+            {
+                WriteContent(writer, content);
+            }
+        }
+
+        private static void WriteContent(StreamWriter writer, string content)
+        {
+            writer.Write(content);
+            writer.Flush();
+            writer.Close();
+            writer.Dispose();
+        }
+
+        public static void SetExitCode(PSCmdlet cmdlet, int exitCode)
+        {
+            Environment.SetEnvironmentVariable(EnvironmentVariables.Package.ChocolateyExitCode, exitCode.ToString());
+            cmdlet.Host.SetShouldExit(exitCode);
+        }
+
 
         /// <summary>
         /// Gets the path to the location of <c>powershell.exe</c>.

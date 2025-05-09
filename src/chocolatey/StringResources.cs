@@ -276,6 +276,13 @@ namespace chocolatey
                 internal const string ChocolateyInstallArguments = "chocolateyInstallArguments";
 
                 /// <summary>
+                /// TODO
+                /// </summary>
+                [EditorBrowsable(EditorBrowsableState.Never)]
+                [Browsable(false)]
+                internal const string ChocolateyInstallDirectoryPackage = nameof(ChocolateyInstallDirectoryPackage);
+
+                /// <summary>
                 /// The identified type of the installer the package uses during installation.
                 /// </summary>
                 [EditorBrowsable(EditorBrowsableState.Never)]
