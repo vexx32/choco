@@ -84,6 +84,7 @@ namespace chocolatey
         private readonly Container _container;
         private readonly ChocolateyLicense _license;
         private readonly LogSinkLog _logSinkLogger = new LogSinkLog();
+        private readonly AggregateLog _defaultLogger;
         private Action<ChocolateyConfiguration> _propConfig;
 
         /// <summary>
@@ -97,6 +98,8 @@ namespace chocolatey
         public GetChocolatey(bool initializeLogging)
         {
             _container = SimpleInjectorContainer.Container;
+            _defaultLogger = new AggregateLog(new List<ILog>() { new Log4NetLog(), _logSinkLogger });
+
             if (initializeLogging)
             {
                 var loggingLocation = ApplicationParameters.LoggingLocation;
@@ -104,7 +107,7 @@ namespace chocolatey
                 fileSystem.EnsureDirectoryExists(loggingLocation);
 
                 Log4NetAppenderConfiguration.Configure(loggingLocation, excludeLoggerNames: ChocolateyLoggers.Trace.ToStringSafe());
-                Log.InitializeWith(new AggregateLog(new List<ILog>() { new Log4NetLog(), _logSinkLogger }));
+                Log.InitializeWith(_defaultLogger);
                 "chocolatey".Log().Debug("XmlConfiguration is now operational");
             }
             _license = License.ValidateLicense();
@@ -115,16 +118,19 @@ namespace chocolatey
         /// </summary>
         /// <param name="logger">This is the logger you want Chocolatey to also use.</param>
         /// <returns>This <see cref="GetChocolatey"/> instance</returns>
+        [Obsolete("This method is obsolete. Prefer RegisterGlobalLogger() instead.")]
         public GetChocolatey SetCustomLogging(ILog logger)
         {
             return SetCustomLogging(logger, logExistingMessages: true, addToExistingLoggers: false);
         }
 
+        [Obsolete("This method is obsolete. Prefer RegisterGlobalLogger() instead.")]
         public GetChocolatey SetCustomLogging(ILog logger, bool logExistingMessages)
         {
             return SetCustomLogging(logger, logExistingMessages, addToExistingLoggers: false);
         }
 
+        [Obsolete("This method is obsolete. Prefer RegisterGlobalLogger() instead.")]
         public GetChocolatey SetCustomLogging(ILog logger, bool logExistingMessages, bool addToExistingLoggers)
         {
             var aggregateLog = new AggregateLog(new List<ILog> { logger });
@@ -134,6 +140,77 @@ namespace chocolatey
             }
 
             Log.InitializeWith(aggregateLog, resetLoggers: false);
+            if (logExistingMessages)
+            {
+                DrainLogSink(logger);
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// Register an additional global logger for Chocolatey.
+        /// Note that this will affect the entire application context and not just this <see cref="GetChocolatey"/> instance.
+        /// 
+        /// This overload will additionally ensure all prior log messages from this application run are flushed into the
+        /// new logger, and replace any previously set custom loggers.
+        /// </summary>
+        /// <param name="logger">This is the logger you want Chocolatey to also use.</param>
+        /// <returns>This <see cref="GetChocolatey"/> instance.</returns>
+        public GetChocolatey RegisterGlobalLogger(ILog logger)
+        {
+            return RegisterGlobalLogger(logger, logExistingMessages: true, addToExistingLoggers: false);
+        }
+
+        /// <summary>
+        /// Register an additional global logger for Chocolatey.
+        /// Note that this will affect the entire application context and not just this <see cref="GetChocolatey"/> instance.
+        /// 
+        /// This overload will replace any previously set custom loggers.
+        /// </summary>
+        /// <param name="logger">This is the logger you want Chocolatey to also use.</param>
+        /// <param name="logExistingMessages">Whether to flush the existing logged messages into the newly registered logger.</param>
+        /// <returns>This <see cref="GetChocolatey"/> instance.</returns>
+        public GetChocolatey RegisterGlobalLogger(ILog logger, bool logExistingMessages)
+        {
+            return RegisterGlobalLogger(logger, logExistingMessages, addToExistingLoggers: false);
+        }
+
+        /// <summary>
+        /// Register an additional global logger for Chocolatey.
+        /// Note that this will affect the entire application context and not just this <see cref="GetChocolatey"/> instance.
+        /// </summary>
+        /// <param name="logger">This is the logger you want Chocolatey to also use.</param>
+        /// <param name="logExistingMessages">Whether to flush the existing logged messages into the newly registered logger.</param>
+        /// <param name="addToExistingLoggers">Pass this as <c>true</c> to retain any previously registered custom loggers.</param>
+        /// <returns>This <see cref="GetChocolatey"/> instance.</returns>
+        public GetChocolatey RegisterGlobalLogger(ILog logger, bool logExistingMessages, bool addToExistingLoggers)
+        {
+            var loggers = new List<ILog>() { logger };
+
+            if (addToExistingLoggers)
+            {
+                var currentLogger = Log.GetLoggerFor("chocolatey");
+
+                if (currentLogger is AggregateLog aggregate)
+                {
+                    // We pull these out so we just have a flat AggregateLog rather than a messy nested AggregateLog
+                    // which seems to have issues propagating log messages properly after it gets a few levels deep.
+                    loggers.AddRange(aggregate.Loggers);
+                }
+                else
+                {
+                    loggers.Add(currentLogger);
+                }
+            }
+            else
+            {
+                // We will otherwise be clearing all loggers on this call, so in this instance we do
+                // also want to retain the default loggers so things keep working as expected.
+                loggers.Add(_defaultLogger);
+            }
+
+            Log.InitializeWith(new AggregateLog(loggers), resetLoggers: true);
             if (logExistingMessages)
             {
                 DrainLogSink(logger);
