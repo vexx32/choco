@@ -664,8 +664,7 @@
             $XML.package.metadata.version | Should -Be "1.0.0"
         }
 
-        # This behaviour was fixed in 0.10.16
-        It "Should not have been able to delete the rollback" -Skip:(-not (Test-ChocolateyVersionEqualOrHigherThan "0.10.16-beta")) {
+        It "Should not have been able to delete the rollback" {
             "$env:ChocolateyInstall\lib-bkp\$PackageUnderTest" | Should -Exist
         }
 
