@@ -583,7 +583,7 @@
         }
     }
 
-    Context "Force Installing a Package that is already installed (with a delete locked file)" {
+    Context "Force Installing a Package that is already installed (with a delete locked file)" -Tag RollbackBackup {
         BeforeAll {
             Restore-ChocolateyInstallSnapshot
 
@@ -619,8 +619,26 @@
             $XML.package.metadata.version | Should -Be "1.0.0"
         }
 
-        It "Should not have been able to delete the rollback" {
+        # Observed behavior: a forced reinstall over a file held open with a
+        # delete-granting share leaves the rollback backup (lib-bkp) in place on
+        # Windows Server 2019 and earlier, but removes it on Windows Server 2022
+        # and newer, and on client Windows 10 (per issue #3144). The last build
+        # we see retain it is Server 2019 / Windows 10 1809 (17763), so the gate
+        # sits at the next release, Windows 10 1903 (10.0.18362): Server 2016/2019
+        # retain the rollback, while Windows 10 1903+ and Windows Server 2022+
+        # remove it. The likely cause is a change in how Windows removes open,
+        # delete-shared files - believed to be POSIX-style deletes becoming the
+        # default, per golang/go#78072 and dotnet/runtime#32737 - but it is not
+        # confirmed by Microsoft docs. Build numbers:
+        #   https://learn.microsoft.com/en-us/windows/release-health/release-information (client)
+        #   https://learn.microsoft.com/en-us/windows-server/get-started/windows-server-release-info (server)
+        # See https://github.com/chocolatey/choco/issues/3144.
+        It "Should not have been able to delete the rollback" -Skip:(Test-WindowsVersionEqualOrHigherThan "10.0.18362") {
             "$env:ChocolateyInstall\lib-bkp\$PackageUnderTest" | Should -Exist
+        }
+
+        It "Should have been able to delete the rollback" -Skip:(-not (Test-WindowsVersionEqualOrHigherThan "10.0.18362")) {
+            "$env:ChocolateyInstall\lib-bkp\$PackageUnderTest" | Should -Not -Exist
         }
 
         It "Outputs a message showing that installation succeeded." {
@@ -628,7 +646,7 @@
         }
     }
 
-    Context "Force Installing a Package that is already installed (with a read/delete locked file)" {
+    Context "Force Installing a Package that is already installed (with a read/delete locked file)" -Tag RollbackBackup {
         BeforeAll {
             Restore-ChocolateyInstallSnapshot
 
@@ -664,8 +682,26 @@
             $XML.package.metadata.version | Should -Be "1.0.0"
         }
 
-        It "Should not have been able to delete the rollback" {
+        # Observed behavior: a forced reinstall over a file held open with a
+        # delete-granting share leaves the rollback backup (lib-bkp) in place on
+        # Windows Server 2019 and earlier, but removes it on Windows Server 2022
+        # and newer, and on client Windows 10 (per issue #3144). The last build
+        # we see retain it is Server 2019 / Windows 10 1809 (17763), so the gate
+        # sits at the next release, Windows 10 1903 (10.0.18362): Server 2016/2019
+        # retain the rollback, while Windows 10 1903+ and Windows Server 2022+
+        # remove it. The likely cause is a change in how Windows removes open,
+        # delete-shared files - believed to be POSIX-style deletes becoming the
+        # default, per golang/go#78072 and dotnet/runtime#32737 - but it is not
+        # confirmed by Microsoft docs. Build numbers:
+        #   https://learn.microsoft.com/en-us/windows/release-health/release-information (client)
+        #   https://learn.microsoft.com/en-us/windows-server/get-started/windows-server-release-info (server)
+        # See https://github.com/chocolatey/choco/issues/3144.
+        It "Should not have been able to delete the rollback" -Skip:(Test-WindowsVersionEqualOrHigherThan "10.0.18362") {
             "$env:ChocolateyInstall\lib-bkp\$PackageUnderTest" | Should -Exist
+        }
+
+        It "Should have been able to delete the rollback" -Skip:(-not (Test-WindowsVersionEqualOrHigherThan "10.0.18362")) {
+            "$env:ChocolateyInstall\lib-bkp\$PackageUnderTest" | Should -Not -Exist
         }
 
         It "Outputs a message showing that installation succeeded." {
@@ -673,7 +709,7 @@
         }
     }
 
-    Context "Force Installing a Package that is already installed (with an exclusively locked file)" {
+    Context "Force Installing a Package that is already installed (with an exclusively locked file)" -Tag RollbackBackup {
         BeforeDiscovery {
             $PackageUnderTest = "installpackage"
         }
