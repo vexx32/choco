@@ -4,6 +4,9 @@
         Initialize-ChocolateyTestInstall
         Disable-ChocolateySource -All
         Enable-ChocolateySource -Name hermes
+        # Packages that are on hermes-setup that may have updates not intended to be tested here. Exclude them from
+        # upgrade all so a newer product version on the hermes-setup source doesn't get upgraded.
+        $ExceptPackages = 'chocolatey,chocolatey.extension,chocolatey-agent,pester,chocolatey-license-business'
 
         New-ChocolateyInstallSnapshot
         $features = Get-ChocolateyFeatures
@@ -79,7 +82,7 @@
             $null = Invoke-Choco install curl --package-parameters="'/CurlOnlyParam'" --version="7.77.0" --ia="'/CurlIAParam'" --x86 -y
             $null = Invoke-Choco install wget --version=1.21.1 -y
 
-            $Output = Invoke-Choco upgrade all -y --debug
+            $Output = Invoke-Choco upgrade all -y --debug --except="$ExceptPackages"
         }
 
         It 'Exits with Success (0)' {
@@ -168,7 +171,7 @@
             $null = Invoke-Choco install curl
 
             # Exclude packages not involved in these tests to ensure that they don't report false positives
-            $Output = Invoke-Choco upgrade all --except="chocolatey,chocolatey.extension,chocolatey-agent,pester,chocolatey-license-business"
+            $Output = Invoke-Choco upgrade all --except="$ExceptPackages"
         }
 
         It 'Exits with Success (0)' {
@@ -183,7 +186,7 @@
             BeforeAll {
                 $null = Enable-ChocolateyFeature -Name "useEnhancedExitCodes"
 
-                $Output = Invoke-Choco upgrade all
+                $Output = Invoke-Choco upgrade all --except="$ExceptPackages"
             }
 
             It "Exits with ExitCode 2" {
@@ -208,7 +211,7 @@
             $null = Invoke-Choco install wget --version=1.21.1 -y --forcex86
             $null = Invoke-Choco install firefox --version=99.0.1 --package-parameters="'/l=eu'" -y --ia="'/RemoveDistributionDir=true'"
 
-            $Output = Invoke-Choco upgrade all -y --debug
+            $Output = Invoke-Choco upgrade all -y --debug --except="$ExceptPackages"
         }
 
         AfterAll {
@@ -827,7 +830,7 @@ To upgrade a local, or remote file, you may use:
             $Setup = Invoke-Choco install $DependentPackage.Name --version $DependentPackage.Version --confirm
             $Setup2 = Invoke-Choco install $BasePackage --version 1.0.0 --confirm
             # We need to exclude packages that are in Test Kitchen but not the other environments.
-            $Output = Invoke-Choco upgrade $PackageName --confirm --except="chocolatey,chocolatey.extension,chocolatey-agent,pester,chocolatey-license-business" $Argument
+            $Output = Invoke-Choco upgrade $PackageName --confirm --except="$ExceptPackages" $Argument
         }
 
         It "Exits with expected result (<ExpectedExit>)" {
