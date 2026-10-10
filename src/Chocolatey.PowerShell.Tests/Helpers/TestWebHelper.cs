@@ -14,9 +14,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
 using Chocolatey.PowerShell.Helpers;
 
@@ -34,23 +37,77 @@ namespace Chocolatey.PowerShell.Tests.Helpers
         {
         }
 
+        /// <summary>
+        /// The proxy reported as the system proxy, so that specs do not depend on the machine's settings.
+        /// </summary>
+        public IWebProxy SystemProxy { get; set; }
+
+        /// <summary>
+        /// When set, requests are sent through this handler instead of the network.
+        /// </summary>
+        public HttpMessageHandler MessageHandler { get; set; }
+
         public int Read(Stream stream, byte[] buffer)
         {
             return ReadBuffer(stream, buffer);
         }
 
-        public HttpWebRequest CreateRequest()
+        public void SetReadTimeout(TimeSpan? timeout)
         {
-            return CreateWebRequest(Options);
+            ReadTimeout = timeout;
         }
 
-        public void ApplyProxyConfiguration(WebRequest request)
+        public HttpClientHandler CreateRequestHandler()
         {
-            base.SetProxyConfiguration(request);
+            return CreateHandler(Options);
         }
 
-        protected override void SetProxyConfiguration(WebRequest request)
+        public HttpRequestMessage CreateMessage(HttpClientHandler handler)
         {
+            return CreateRequestMessage(Options, handler);
+        }
+
+        public TimeSpan RequestTimeout()
+        {
+            return GetRequestTimeout();
+        }
+
+        public TimeSpan? ResponseTimeout()
+        {
+            return GetReadTimeout();
+        }
+
+        public Dictionary<string, string> ReadResponseHeaders(HttpResponseMessage response)
+        {
+            Response = response;
+            return GetResponseHeaders();
+        }
+
+        public void ApplyProxyConfiguration(HttpClientHandler handler, Uri requestUri)
+        {
+            base.SetProxyConfiguration(handler, requestUri);
+        }
+
+        protected override IWebProxy GetSystemProxy()
+        {
+            return SystemProxy;
+        }
+
+        protected override void SetProxyConfiguration(HttpClientHandler handler, Uri requestUri)
+        {
+        }
+
+        protected override HttpClient CreateHttpClient(HttpClientHandler handler, TimeSpan timeout)
+        {
+            if (MessageHandler is null)
+            {
+                return base.CreateHttpClient(handler, timeout);
+            }
+
+            return new HttpClient(MessageHandler)
+            {
+                Timeout = timeout
+            };
         }
     }
 }
