@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using Chocolatey.PowerShell.Shared;
@@ -24,10 +25,11 @@ using Microsoft.Win32;
 namespace Chocolatey.PowerShell.Helpers
 {
     /// <summary>
-    /// Utility class for handling registry operations like finding software uninstall keys or modifying Explorer
-    /// context menus.
+    /// Utility class for handling registry operations like finding software uninstall keys, modifying Explorer
+    /// context menus, or associating file extensions.
     /// Used by <see cref="Commands.GetUninstallRegistryKeyCommand"/>,
-    /// <see cref="Commands.InstallChocolateyExplorerMenuItemCommand"/>, and any other commands that need them.
+    /// <see cref="Commands.InstallChocolateyExplorerMenuItemCommand"/>,
+    /// <see cref="Commands.InstallChocolateyFileAssociationCommand"/>, and any other commands that need them.
     /// </summary>
     public static class RegistryHelper
     {
@@ -208,11 +210,126 @@ namespace Chocolatey.PowerShell.Helpers
             SetDefaultValue(root, $@"{menuKeyPath}\command", $"{command} \"%1\"");
         }
 
-        private static void SetDefaultValue(RegistryKey root, string keyPath, string value)
+        /// <summary>
+        /// Gets the file extension to associate, trimmed of whitespace and starting with a period.
+        /// </summary>
+        /// <param name="extension">The extension, with or without its leading period.</param>
+        /// <returns>The extension with a leading period, such as <c>.txt</c>.</returns>
+        /// <exception cref="ArgumentException">The provided extension is null or whitespace.</exception>
+        public static string GetFileAssociationExtension(string extension)
+        {
+            if (string.IsNullOrWhiteSpace(extension))
+            {
+                throw new ArgumentException("The extension cannot be empty or only whitespace.", nameof(extension));
+            }
+
+            var trimmed = extension.Trim();
+            return trimmed.StartsWith(".", StringComparison.Ordinal) ? trimmed : $".{trimmed}";
+        }
+
+        /// <summary>
+        /// Gets the executable path to register for a file association. A path that uses environment variables,
+        /// such as <c>%ChocolateyInstall%\bin\tool.exe</c>, is kept as given so that the association follows the
+        /// variables, as long as it expands to a full path. Any other path is registered as its full path.
+        /// The executable must exist.
+        /// </summary>
+        /// <param name="cmdlet">The cmdlet to resolve a relative path from.</param>
+        /// <param name="executable">The executable path as it was given.</param>
+        /// <returns>The path to register.</returns>
+        /// <exception cref="FileNotFoundException">There is no file at the path, after expanding any environment variables.</exception>
+        public static string GetFileAssociationExecutable(PSCmdlet cmdlet, string executable)
+        {
+            return GetFileAssociationExecutable(executable, path => PSHelper.GetUnresolvedPath(cmdlet, path), File.Exists);
+        }
+
+        /// <summary>
+        /// Gets the executable path to register for a file association, resolving and checking the path with the
+        /// functions given.
+        /// </summary>
+        /// <remarks>
+        /// Prefer using <see cref="GetFileAssociationExecutable(PSCmdlet, string)"/> over calling this directly.
+        /// This overload is intended as an entry point to allow unit testing of the functionality without
+        /// touching the file system or the PowerShell session state.
+        /// </remarks>
+        /// <param name="executable">The executable path as it was given.</param>
+        /// <param name="resolvePath">A function which gets the full path of a path that may be relative.</param>
+        /// <param name="fileExists">A function which checks whether there is a file at a full path.</param>
+        /// <returns>The path to register.</returns>
+        /// <exception cref="FileNotFoundException">There is no file at the path, after expanding any environment variables.</exception>
+        internal static string GetFileAssociationExecutable(string executable, Func<string, string> resolvePath, Func<string, bool> fileExists)
+        {
+            var expandedExecutable = Environment.ExpandEnvironmentVariables(executable);
+            var resolvedExecutable = resolvePath(expandedExecutable);
+
+            if (!fileExists(resolvedExecutable))
+            {
+                throw new FileNotFoundException($"'{executable}' does not exist, cannot create file association", executable);
+            }
+
+            var usesVariables = !string.Equals(expandedExecutable, executable, StringComparison.Ordinal);
+
+            return usesVariables && string.Equals(expandedExecutable, resolvedExecutable, StringComparison.OrdinalIgnoreCase)
+                ? executable
+                : resolvedExecutable;
+        }
+
+        /// <summary>
+        /// Gets the name of the file type that an extension is associated with, which is the file name of the
+        /// executable with any spaces replaced by underscores.
+        /// </summary>
+        /// <param name="executable">The path to the executable.</param>
+        /// <returns>The file type name, such as <c>my_app.exe</c>.</returns>
+        public static string GetFileAssociationType(string executable)
+        {
+            return Path.GetFileName(executable).Replace(" ", "_");
+        }
+
+        /// <summary>
+        /// Associates a file extension with an executable.
+        /// The extension and the file type's command are written under <c>HKEY_LOCAL_MACHINE\SOFTWARE\Classes</c>,
+        /// and the file type's label through <c>HKEY_CLASSES_ROOT</c>.
+        /// </summary>
+        /// <param name="extension">The extension to associate, with its leading dot.</param>
+        /// <param name="executable">The full path to the executable.</param>
+        /// <param name="arguments">The arguments passed to the executable, such as <c>"%1"</c>.</param>
+        public static void SetFileAssociation(string extension, string executable, string arguments)
+        {
+            using (var machineClasses = Registry.LocalMachine.CreateSubKey(@"SOFTWARE\Classes"))
+            {
+                SetFileAssociation(machineClasses, Registry.ClassesRoot, extension, executable, arguments);
+            }
+        }
+
+        /// <summary>
+        /// Associates a file extension with an executable, writing under the keys given.
+        /// </summary>
+        /// <remarks>
+        /// Prefer using <see cref="SetFileAssociation(string, string, string)"/> over calling this directly.
+        /// This overload is intended as an entry point to allow unit testing of the functionality without
+        /// writing to the machine's file associations.
+        /// </remarks>
+        /// <param name="machineClasses">The key to write the extension and the file type's command under.</param>
+        /// <param name="classesRoot">The key to write the file type's label under, after the other values.</param>
+        /// <param name="extension">The extension to associate, with its leading dot.</param>
+        /// <param name="executable">The full path to the executable.</param>
+        /// <param name="arguments">The arguments passed to the executable, such as <c>"%1"</c>.</param>
+        internal static void SetFileAssociation(RegistryKey machineClasses, RegistryKey classesRoot, string extension, string executable, string arguments)
+        {
+            var fileType = GetFileAssociationType(executable);
+            var command = string.IsNullOrEmpty(arguments) ? $"\"{executable}\"" : $"\"{executable}\" {arguments}";
+
+            SetDefaultValue(machineClasses, extension, fileType);
+            SetDefaultValue(machineClasses, $@"{fileType}\shell\open\command", command, RegistryValueKind.ExpandString);
+
+            // Written last, so that the file type's key already exists under machineClasses.
+            SetDefaultValue(classesRoot, fileType, $"{fileType} file");
+        }
+
+        private static void SetDefaultValue(RegistryKey root, string keyPath, string value, RegistryValueKind kind = RegistryValueKind.String)
         {
             using (var key = root.CreateSubKey(keyPath))
             {
-                key.SetValue(string.Empty, value ?? string.Empty, RegistryValueKind.String);
+                key.SetValue(string.Empty, value ?? string.Empty, kind);
             }
         }
     }
